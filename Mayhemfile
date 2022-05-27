@@ -1,0 +1,5 @@
+project: rnshah9/entr
+target: entr
+
+cmds:
+  - cmd: /repo/entr -nz cat
