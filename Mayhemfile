@@ -2,4 +2,4 @@ project: entr
 target: entr
 
 cmds:
-  - cmd: /repo/entr -nz cat
+  - cmd: /entr -nz cat
