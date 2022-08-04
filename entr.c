@@ -197,6 +197,9 @@ main(int argc, char *argv[]) {
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
 
+	if (fcntl(kq, F_SETFD, FD_CLOEXEC) == -1)
+		warn("failed to set FD_CLOEXEC to kqueue descriptor");
+
 	/* expect file list from a pipe */
 	if (isatty(fileno(stdin)))
 		usage();
@@ -437,15 +440,9 @@ run_utility(char *argv[]) {
 	char **new_argv;
 	char *p, *arg_buf;
 	int argc;
-	int stdin_pipe[2] = {0, 0};
 
-	if (restart_opt == 1) {
+	if (restart_opt == 1)
 		terminate_utility();
-
-		if (pipe(stdin_pipe) != 0)
-			err(1, "Failed to create stdin pipe");
-		close(stdin_pipe[1]);
-	}
 
 	if (shell_opt == 1) {
 		/* run argv[1] with a shell using the leading edge as $0 */
@@ -495,7 +492,8 @@ run_utility(char *argv[]) {
 		/* Set process group so subprocess can be signaled */
 		if (restart_opt == 1) {
 			setpgid(0, getpid());
-			dup2(stdin_pipe[0], STDIN_FILENO);
+			close(STDIN_FILENO);
+			open(_PATH_DEVNULL, O_RDONLY);
 		}
 		/* wait up to 1 seconds for each file to become available */
 		for (i=0; i < 10; i++) {
@@ -533,9 +531,9 @@ watch_file(int kq, WatchFile *file) {
 	/* wait up to 1 second for file to become available */
 	for (i=0; i < 10; i++) {
 		#ifdef O_EVTONLY
-		file->fd = xopen(file->fn, O_RDONLY|O_EVTONLY);
+		file->fd = xopen(file->fn, O_RDONLY|O_CLOEXEC|O_EVTONLY);
 		#else
-		file->fd = xopen(file->fn, O_RDONLY);
+		file->fd = xopen(file->fn, O_RDONLY|O_CLOEXEC);
 		#endif
 		if (file->fd == -1) nanosleep(&delay, NULL);
 		else break;

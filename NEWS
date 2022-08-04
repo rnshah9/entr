@@ -1,6 +1,9 @@
 = Next Release: 5.3
 
  - Symlink changes detected on Linux by setting 'ENTR_INOTIFY_SYMLINK'
+ - Use /dev/null rather then closed pipe for stdin in -r mode
+ - Utilize {O,FD}_CLOEXEC flag for unintentional leaks of descriptors to
+   executed utilities
 
 = Release History
 
